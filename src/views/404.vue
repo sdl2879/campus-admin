@@ -1,21 +1,21 @@
 <template>
   <div class="content">
-    <img class="backgroud" src="@/assets/img/404.png" alt>
+    <img class="backgroud" src="@/assets/img/404.png" alt="" />
     <div class="text main-text">出错了...页面失踪了</div>
     <div>
-      <el-button class="text" @click="back()" type="text" icon="el-icon-back">返回</el-button>
+      <el-button class="text" type="primary" :icon="Back" @click="back">返回</el-button>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  methods: {
-    back() {
-      window.history.length > 1 ? this.$router.go(-1) : this.$router.push("/");
-    }
-  }
-};
+<script setup>
+import { Back } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+function back() {
+  window.history.length > 1 ? router.go(-1) : router.push('/')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -33,7 +33,7 @@ export default {
     height: 200px;
     margin-top: 80px;
   }
-  .main-text{
+  .main-text {
     margin-top: 80px;
   }
   .text {
@@ -43,4 +43,3 @@ export default {
   }
 }
 </style>
-

@@ -1,44 +1,39 @@
 // src/api/login.js（登录相关）
-import request from '@/utils/request'
+import request from '@/utils/request';
 
-// 用户登录
-export function login(data) {
+/**
+ * 管理端登录
+ * @param {Object} params - 登录参数
+ * @param {string} params.username - 用户名
+ * @param {string} params.password - 密码
+ * @returns {Promise} - 请求Promise
+ */
+export const loginAdmin = (params) => {
     return request({
-        url: '/api/login',
-        method: 'post',
-        data
-    })
-}
+        url: '/admin/login', // 后端登录接口地址
+        method: 'POST',
+        data: params
+    });
+};
 
-// 获取用户信息
-export function getUserInfo(token) {
+/**
+ * 管理端退出登录
+ * @returns {Promise} - 请求Promise
+ */
+export const logoutAdmin = () => {
     return request({
-        url: '/api/getUserInfo',
-        method: 'post',
-        data: { token }
-    })
-}
+        url: '/admin/logout',
+        method: 'POST'
+    });
+};
 
-// src/api/recommend.js（活动推荐）
-import request from '@/utils/request'
-
-// 智能推荐活动
-export function getRecommendActivity(studentId) {
+/**
+ * 获取当前登录用户信息
+ * @returns {Promise} - 请求Promise
+ */
+export const getAdminInfo = () => {
     return request({
-        url: '/api/recommend/activity',
-        method: 'get',
-        params: { studentId }
-    })
-}
-
-// src/api/warning.js（分数预警）
-import request from '@/utils/request'
-
-// 分数预警查询
-export function getScoreWarning(studentId) {
-    return request({
-        url: '/api/warning/score',
-        method: 'get',
-        params: { studentId }
-    })
-}
+        url: '/admin/getInfo',
+        method: 'GET'
+    });
+};

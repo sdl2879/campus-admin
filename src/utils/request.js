@@ -2,54 +2,58 @@
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
-p
-// 创建axios实例
+
+// 创建 axios 实例（开发环境-适配前端8080端口+代理）
 const service = axios.create({
-    baseURL: 'http://localhost:8080/campus-activity', // 后端接口前缀
+    baseURL: '/api', // 核心：相对路径，由Vite代理转发到后端
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json;charset=utf-8'
     }
 })
 
-// 请求拦截器（添加token）
-service.intercetors.request.use(
+// 请求拦截器：添加管理端Token（adminToken）+ Bearer前缀
+service.interceptors.request.use(
     config => {
-        const token = localStorage.getItem('token')
+        const token = localStorage.getItem('adminToken')
         if (token) {
-            config.headers['Authorization'] = token // 携带token
+            config.headers['Authorization'] = `Bearer ${token}`
         }
         return config
     },
-    error => {
-        return Promise.reject(error)
-    }
+    error => Promise.reject(error)
 )
 
-// 响应拦截器（统一处理结果）
+// 响应拦截器：统一处理管理端接口结果
 service.interceptors.response.use(
     response => {
         const res = response.data
-        // 成功：code=200
+        // 管理端接口统一返回格式：{code:200, msg:"成功", data:{}}
         if (res.code !== 200) {
-            ElMessage.error(res.msg || '请求失败')
-            // token过期/无效，跳登录页
+            ElMessage.error(res.msg || '操作失败')
+            // 401：登录过期/未登录，跳管理端登录页
             if (res.code === 401) {
-                ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
-                    confirmButtonText: '确定',
-                    type: 'warning'
-                }).then(() => {
-                    localStorage.removeItem('token')
-                    router.push('/login')
+                ElMessageBox.confirm(
+                    '登录已过期，请重新登录管理端',
+                    '权限验证',
+                    {
+                        confirmButtonText: '重新登录',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }
+                ).then(() => {
+                    localStorage.removeItem('adminToken')
+                    router.push('/admin/login')
                 })
             }
             return Promise.reject(res)
-        } else {
-            return res
         }
+        return res // 成功返回完整结果：{code:200, msg, data}
     },
     error => {
-        ElMessage.error('服务器错误：' + error.message)
+        // 网络错误/服务器错误友好提示
+        const errMsg = error.message || '服务器请求失败'
+        ElMessage.error(`管理端接口错误：${errMsg}`)
         return Promise.reject(error)
     }
 )
