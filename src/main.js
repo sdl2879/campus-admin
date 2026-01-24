@@ -1,23 +1,18 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-// 1. 导入 Pinia 核心方法
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
-// 2. 创建 Pinia 实例
-const pinia = createPinia()
-
+// 仅保留核心注册，删除所有手动组件注册（避免重复）
 const app = createApp(App)
-// 3. 先注册 Pinia（必须在组件渲染前！）
-app.use(pinia)
-// 再注册其他插件
-app.use(ElementPlus)
+app.use(createPinia())
+app.use(ElementPlus) // 只靠这一行全局注册 Element Plus
 app.use(router)
 
-// 全局注册图标
+// 仅注册图标，不注册其他组件
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }

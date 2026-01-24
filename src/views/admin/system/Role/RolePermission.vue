@@ -1,15 +1,14 @@
-﻿
-<template>
+﻿<template>
   <div class="role-permission-container">
     <div class="page-header">
-      <h3>鏉冮檺鍒嗛厤 - {{ roleName }}</h3>
-      <el-button type="primary" @click="submitPermission">淇濆瓨鏉冮檺</el-button>
+      <h3>权限分配 - {{ roleName }}</h3>
+      <el-button type="primary" class="save-btn" @click="submitPermission">保存权限</el-button>
     </div>
 
-    
+    <!-- 权限分类标签页 -->
     <el-tabs v-model="activeTab" type="card" class="permission-tabs">
-      
-      <el-tab-pane label="鑿滃崟鏉冮檺" name="menu">
+      <!-- 菜单权限 -->
+      <el-tab-pane label="菜单权限" name="menu">
         <el-card class="permission-card">
           <el-tree
               :data="menuTree"
@@ -23,8 +22,8 @@
         </el-card>
       </el-tab-pane>
 
-      
-      <el-tab-pane label="鎿嶄綔鏉冮檺" name="operation">
+      <!-- 操作权限 -->
+      <el-tab-pane label="操作权限" name="operation">
         <el-card class="permission-card">
           <div class="operation-permission">
             <div v-for="(operationGroup, menuId) in operationMap" :key="menuId">
@@ -39,7 +38,7 @@
                     :key="operation.id"
                     :label="operation.id"
                 >
-                  {{ operation.operationName }}锛坽{ operation.operationCode }}锛?
+                  {{ operation.operationName }}（{{ operation.operationCode }}）
                 </el-checkbox>
               </el-checkbox-group>
             </div>
@@ -47,23 +46,23 @@
         </el-card>
       </el-tab-pane>
 
-      
-      <el-tab-pane label="鏁版嵁鏉冮檺" name="data">
+      <!-- 数据权限 -->
+      <el-tab-pane label="数据权限" name="data">
         <el-card class="permission-card">
-          <el-form :model="dataPermissionForm" label-width="120px">
-            <el-form-item label="鏁版嵁鏉冮檺鑼冨洿">
+          <el-form :model="dataPermissionForm" label-width="120px" class="data-permission-form">
+            <el-form-item label="数据权限范围">
               <el-radio-group v-model="dataPermissionForm.dataScope">
-                <el-radio label="鍏ㄩ儴鏁版嵁">鍏ㄩ儴鏁版嵁</el-radio>
-                <el-radio label="鑷畾涔夋暟鎹?>鑷畾涔夋暟鎹紙鎸夐櫌绯?閮ㄩ棬锛?/el-radio>
-                <el-radio label="鏈汉鏁版嵁">浠呮湰浜哄垱寤烘暟鎹?/el-radio>
-                <el-radio label="瑙掕壊鏁版嵁">鍚岃鑹茬敤鎴锋暟鎹?/el-radio>
+                <el-radio label="全部数据">全部数据</el-radio>
+                <el-radio label="自定义数据">自定义数据（按院系/部门）</el-radio>
+                <el-radio label="本人数据">仅本人创建数据</el-radio>
+                <el-radio label="角色数据">同角色用户数据</el-radio>
               </el-radio-group>
             </el-form-item>
 
-            
+            <!-- 自定义数据权限（按院系） -->
             <el-form-item
-                label="鍙€夐櫌绯?
-                v-if="dataPermissionForm.dataScope === '鑷畾涔夋暟鎹?"
+                label="可选院系"
+                v-if="dataPermissionForm.dataScope === '自定义数据'"
                 class="data-scope-dept"
             >
               <el-tree
@@ -84,109 +83,160 @@
 </template>
 
 <script setup>
+// 1. 导入依赖
 import { ref, reactive, onMounted, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRoute, useRouter } from 'vue-router';
-// 瀵煎叆鏉冮檺鐩稿叧鎺ュ彛
-import { getRolePermission, saveRolePermission } from '@/api/system/role';
-// 瀵煎叆闄㈢郴鎺ュ彛锛堟暟鎹潈闄愮敤锛?
-import { getDeptTree } from '@/api/dept/deptInfo';
 
+// 2. 模拟接口（后续替换为真实接口）
+const getRolePermission = (params) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        code: 200,
+        data: {
+          roleName: '系统管理员',
+          menuTree: [
+            { id: '1', menuName: '系统管理', children: [
+                { id: '1-1', menuName: '角色管理' },
+                { id: '1-2', menuName: '模块配置' }
+              ]},
+            { id: '2', menuName: '用户管理', children: [
+                { id: '2-1', menuName: '系统管理员管理' },
+                { id: '2-2', menuName: '学生管理' }
+              ]}
+          ],
+          checkedMenuIds: ['1', '1-1', '2', '2-2'],
+          operationMap: {
+            '1-1': {
+              menuName: '角色管理',
+              operations: [
+                { id: 'op1', operationName: '新增角色', operationCode: 'ADD_ROLE' },
+                { id: 'op2', operationName: '编辑角色', operationCode: 'EDIT_ROLE' },
+                { id: 'op3', operationName: '分配权限', operationCode: 'ASSIGN_PERMISSION' }
+              ]
+            },
+            '2-2': {
+              menuName: '学生管理',
+              operations: [
+                { id: 'op4', operationName: '导入学生', operationCode: 'IMPORT_STUDENT' },
+                { id: 'op5', operationName: '修改分值', operationCode: 'UPDATE_SCORE' }
+              ]
+            }
+          },
+          checkedOperationIds: { '1-1': ['op1', 'op2'], '2-2': ['op4'] },
+          dataScope: '全部数据',
+          checkedDeptIds: []
+        }
+      });
+    }, 500);
+  });
+};
+const saveRolePermission = (data) => Promise.resolve({ code: 200 });
+const getDeptTree = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        code: 200,
+        data: [
+          { id: 'dept1', menuName: '计算机学院', children: [
+              { id: 'dept1-1', menuName: '软件工程系' },
+              { id: 'dept1-2', menuName: '计算机科学系' }
+            ]},
+          { id: 'dept2', menuName: '文学院', children: [
+              { id: 'dept2-1', menuName: '汉语言文学系' }
+            ]}
+        ]
+      });
+    }, 500);
+  });
+};
+
+// 3. 定义所有模板变量（完整初始化）
 const route = useRoute();
 const router = useRouter();
 
-// 褰撳墠瑙掕壊ID锛堜粠璺敱鍙傛暟鑾峰彇锛?
-const roleId = ref(route.params.roleId);
-// 瑙掕壊鍚嶇О锛堢敤浜庨〉闈㈡爣棰橈級
-const roleName = ref('');
-// 婵€娲荤殑鏍囩椤?
+// 当前角色ID（从路由参数获取）
+const roleId = ref(route.params.roleId || '');
+// 角色名称
+const roleName = ref('未知角色');
+// 激活的标签页
 const activeTab = ref('menu');
 
-// 鑿滃崟鏉冮檺鐩稿叧
-const menuTree = ref([]); // 鑿滃崟鏍戝舰缁撴瀯
-const treeProps = ref({
-  label: 'menuName',
-  children: 'children'
-});
-const checkedMenuKeys = ref([]); // 宸查€夎彍鍗旾D闆嗗悎
+// 菜单权限相关
+const menuTree = ref([]);
+const treeProps = ref({ label: 'menuName', children: 'children' });
+const checkedMenuKeys = ref([]);
 
-// 鎿嶄綔鏉冮檺鐩稿叧
-const operationMap = ref({}); // 鎿嶄綔鏉冮檺鍒嗙粍锛坘ey锛氳彍鍗旾D锛寁alue锛歿menuName, operations[]}锛?
-const checkedOperationKeys = ref({}); // 宸查€夋搷浣淚D闆嗗悎锛坘ey锛氳彍鍗旾D锛寁alue锛歔operationId1, ...]锛?
+// 操作权限相关
+const operationMap = ref({});
+const checkedOperationKeys = ref({}); // 初始化空对象，避免undefined
 
-// 鏁版嵁鏉冮檺鐩稿叧
-const dataPermissionForm = ref({
-  dataScope: '鍏ㄩ儴鏁版嵁' // 鏁版嵁鏉冮檺鑼冨洿锛氬叏閮?鑷畾涔?鏈汉/瑙掕壊
-});
-const deptTree = ref([]); // 闄㈢郴鏍戝舰缁撴瀯
-const checkedDeptKeys = ref([]); // 宸查€夐櫌绯籌D闆嗗悎
+// 数据权限相关
+const dataPermissionForm = ref({ dataScope: '全部数据' });
+const deptTree = ref([]);
+const checkedDeptKeys = ref([]);
 
-// 鑾峰彇瑙掕壊宸叉湁鏉冮檺
+// 4. 定义所有方法
+// 获取角色已有权限
 const fetchRolePermission = async () => {
   try {
     const res = await getRolePermission({ roleId: roleId.value });
     if (res.code === 200) {
       const permissionData = res.data;
-      // 璧嬪€艰鑹插悕绉?
-      roleName.value = permissionData.roleName || '鏈煡瑙掕壊';
-
-      // 鑿滃崟鏉冮檺
-      menuTree.value = permissionData.menuTree;
+      roleName.value = permissionData.roleName || '未知角色';
+      menuTree.value = permissionData.menuTree || [];
       checkedMenuKeys.value = permissionData.checkedMenuIds || [];
-
-      // 鎿嶄綔鏉冮檺
       operationMap.value = permissionData.operationMap || {};
-      // 鍒濆鍖栧凡閫夋搷浣滄潈闄?
+      dataPermissionForm.value.dataScope = permissionData.dataScope || '全部数据';
+      checkedDeptKeys.value = permissionData.checkedDeptIds || [];
+
+      // 初始化已选操作权限（避免undefined）
       Object.keys(operationMap.value).forEach(menuId => {
         checkedOperationKeys.value[menuId] = permissionData.checkedOperationIds[menuId] || [];
       });
-
-      // 鏁版嵁鏉冮檺
-      dataPermissionForm.value.dataScope = permissionData.dataScope || '鍏ㄩ儴鏁版嵁';
-      checkedDeptKeys.value = permissionData.checkedDeptIds || [];
     } else {
-      ElMessage.error(res.msg || '鑾峰彇瑙掕壊鏉冮檺澶辫触');
+      ElMessage.error(res.msg || '获取角色权限失败');
     }
   } catch (error) {
-    ElMessage.error('鑾峰彇瑙掕壊鏉冮檺寮傚父');
+    ElMessage.error('获取角色权限异常');
     console.error(error);
   }
 };
 
-// 鑾峰彇闄㈢郴鏍戝舰缁撴瀯锛堟暟鎹潈闄愮敤锛?
+// 获取院系树形结构
 const fetchDeptTree = async () => {
   try {
     const res = await getDeptTree();
     if (res.code === 200) {
-      deptTree.value = res.data;
+      deptTree.value = res.data || [];
     } else {
-      ElMessage.error(res.msg || '鑾峰彇闄㈢郴鍒楄〃澶辫触');
+      ElMessage.error(res.msg || '获取院系列表失败');
     }
   } catch (error) {
-    ElMessage.error('鑾峰彇闄㈢郴鍒楄〃寮傚父');
+    ElMessage.error('获取院系列表异常');
     console.error(error);
   }
 };
 
-// 鑿滃崟鏉冮檺鍕鹃€変簨浠?
+// 菜单权限勾选事件
 const handleMenuCheck = (checkedKeys) => {
   checkedMenuKeys.value = checkedKeys;
 };
 
-// 鎿嶄綔鏉冮檺鍕鹃€変簨浠?
+// 操作权限勾选事件
 const handleOperationCheck = (menuId) => {
-  // 鏃犻渶棰濆閫昏緫锛寁-model 宸茬粦瀹?
+  // v-model已绑定，无需额外逻辑
 };
 
-// 闄㈢郴鍕鹃€変簨浠讹紙鏁版嵁鏉冮檺锛?
+// 院系勾选事件
 const handleDeptCheck = (checkedKeys) => {
   checkedDeptKeys.value = checkedKeys;
 };
 
-// 淇濆瓨鏉冮檺閰嶇疆
+// 保存权限配置
 const submitPermission = async () => {
   try {
-    // 鏋勯€犳彁浜ゅ弬鏁?
     const submitData = {
       roleId: roleId.value,
       checkedMenuIds: checkedMenuKeys.value,
@@ -197,53 +247,65 @@ const submitPermission = async () => {
 
     const res = await saveRolePermission(submitData);
     if (res.code === 200) {
-      ElMessage.success('鏉冮檺閰嶇疆淇濆瓨鎴愬姛');
-      router.push('/admin/system/role/list'); // 杩斿洖瑙掕壊鍒楄〃
+      ElMessage.success('权限配置保存成功');
+      router.push('/admin/system/role/list'); // 返回角色列表
     } else {
-      ElMessage.error(res.msg || '鏉冮檺閰嶇疆淇濆瓨澶辫触');
+      ElMessage.error(res.msg || '权限配置保存失败');
     }
   } catch (error) {
-    ElMessage.error('鏉冮檺閰嶇疆淇濆瓨寮傚父');
+    ElMessage.error('权限配置保存异常');
     console.error(error);
   }
 };
 
-// 鐩戝惉鏁版嵁鏉冮檺鑼冨洿鍙樻洿
+// 监听数据权限范围变更
 watch(
     () => dataPermissionForm.value.dataScope,
     (newVal) => {
-      // 鍒囨崲鍒扳€滆嚜瀹氫箟鏁版嵁鈥濇椂锛屽姞杞介櫌绯绘爲
-      if (newVal === '鑷畾涔夋暟鎹? && deptTree.value.length === 0) {
+      if (newVal === '自定义数据' && deptTree.value.length === 0) {
         fetchDeptTree();
       }
     }
 );
 
-// 椤甸潰鎸傝浇鏃跺垵濮嬪寲鏁版嵁
+// 页面挂载时初始化
 onMounted(() => {
+  if (!roleId.value) {
+    ElMessage.warning('角色ID不存在');
+    router.push('/admin/system/role/list');
+    return;
+  }
   fetchRolePermission();
 });
 </script>
 
 <style scoped>
 .role-permission-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  background-color: #fff;
+  padding: 20px;
+  min-height: calc(100vh - 60px);
 }
 
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.save-btn {
+  background-color: #2f54eb;
+  border-color: #2f54eb;
 }
 
 .permission-tabs {
   width: 100%;
+  margin-bottom: 20px;
 }
 
 .permission-card {
   padding: 20px;
+  border-radius: 4px;
 }
 
 .permission-tree {
@@ -254,14 +316,14 @@ onMounted(() => {
 .operation-permission {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .operation-group-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .operation-checkbox-group {
@@ -270,8 +332,12 @@ onMounted(() => {
   gap: 16px;
 }
 
-.data-scope-dept {
+.data-permission-form {
   margin-top: 10px;
+}
+
+.data-scope-dept {
+  margin-top: 16px;
 }
 
 .dept-tree {

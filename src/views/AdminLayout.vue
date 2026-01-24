@@ -1,21 +1,22 @@
-﻿<!-- 管理端布局 -->
-<template>
+﻿<template>
   <div class="layout-container">
     <!-- 侧边栏 -->
     <el-aside :width="sidebarWidth" class="layout-sidebar">
       <div class="sidebar-logo">
         <h2>校园智能活动推荐系统</h2>
       </div>
+
       <el-menu
-          :default-active="currentRoute"
+          default-active="/admin/system/role/list"
           class="layout-menu"
           background-color="#0f172a"
           text-color="#fff"
           active-text-color="#1989fa"
-          router
           :collapse="isCollapse"
+          :unique-opened="true"
+          router
       >
-        <!-- 系统管理菜单 -->
+        <!-- 系统管理 -->
         <el-sub-menu index="system">
           <template #title>
             <el-icon><Setting /></el-icon>
@@ -27,7 +28,7 @@
           <el-menu-item index="/admin/system/log/operation">操作日志</el-menu-item>
         </el-sub-menu>
 
-        <!-- 用户管理菜单 -->
+        <!-- 用户管理 -->
         <el-sub-menu index="user">
           <template #title>
             <el-icon><User /></el-icon>
@@ -39,7 +40,7 @@
           <el-menu-item index="/admin/user/student/list">学生管理</el-menu-item>
         </el-sub-menu>
 
-        <!-- 活动管理菜单 -->
+        <!-- 活动管理 -->
         <el-sub-menu index="activity">
           <template #title>
             <el-icon><TrendCharts /></el-icon>
@@ -50,7 +51,7 @@
           <el-menu-item index="/admin/activity/data/stat">活动统计</el-menu-item>
         </el-sub-menu>
 
-        <!-- 其他菜单（智能推荐/数据统计/消息通知等） -->
+        <!-- 智能推荐管理 -->
         <el-sub-menu index="recommend">
           <template #title>
             <el-icon><MagicStick /></el-icon>
@@ -68,9 +69,10 @@
       <el-header class="layout-header">
         <div class="header-left">
           <el-button
-              :icon="Menu"
+              icon="Menu"
               class="collapse-btn"
               @click="toggleCollapse"
+              plain
           />
         </div>
         <div class="header-right">
@@ -90,7 +92,7 @@
         </div>
       </el-header>
 
-      <!-- 内容区域（路由出口） -->
+      <!-- 内容区域 -->
       <el-main class="layout-content">
         <router-view />
       </el-main>
@@ -99,10 +101,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
-import { logoutAdmin } from '@/api/login.js';
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+
 // 图标
 import {
   Setting,
@@ -111,107 +113,126 @@ import {
   Menu,
   TrendCharts,
   MagicStick
-} from '@element-plus/icons-vue';
+} from '@element-plus/icons-vue'
 
-const router = useRouter();
+const router = useRouter()
 
-const isCollapse = ref(false);
-const sidebarWidth = computed(() => (isCollapse.value ? '64px' : '220px'));
-const adminName = ref('');
-const currentRoute = computed(() => router.currentRoute.value.path);
+const isCollapse = ref(false)
+const sidebarWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
+const adminName = ref('系统管理员')
+const currentRoute = computed(() => router.currentRoute.value.path)
 
 const toggleCollapse = () => {
-  isCollapse.value = !isCollapse.value;
-};
+  isCollapse.value = !isCollapse.value
+}
 
 const initAdminInfo = () => {
-  const adminInfo = JSON.parse(localStorage.getItem('adminInfo'));
-  if (adminInfo) adminName.value = adminInfo.username || '管理员';
-};
+  try {
+    const adminInfoStr = localStorage.getItem('adminInfo')
+    if (!adminInfoStr) return
+    const adminInfo = JSON.parse(adminInfoStr)
+    if (adminInfo?.username) adminName.value = adminInfo.username
+  } catch (e) {
+    console.warn('解析管理员信息失败', e)
+  }
+}
 
-const handleDropdownCommand = async (command) => {
+const handleDropdownCommand = (command) => {
   switch (command) {
     case 'profile':
-      router.push('/admin/profile');
-      break;
+      router.push('/admin/profile')
+      break
     case 'changePwd':
-      router.push('/admin/changePwd');
-      break;
+      router.push('/admin/changePwd')
+      break
     case 'logout':
-      try {
-        await logoutAdmin();
-      } catch (e) {
-        console.error('退出登录接口异常：', e);
-      } finally {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminInfo');
-        ElMessage.success('退出登录成功！');
-        router.push('/admin/login');
-      }
-      break;
+      localStorage.clear()
+      ElMessage.success('退出登录成功')
+      router.push('/admin/login')
+      break
   }
-};
+}
 
-onMounted(() => initAdminInfo());
+onMounted(() => initAdminInfo())
 </script>
 
 <style scoped>
-/* 样式与你原文件完全一致，未改动 */
 .layout-container {
   display: flex;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
 }
+
 .layout-sidebar {
   background-color: #0f172a;
   color: #fff;
-  overflow-y: auto;
+  transition: width 0.2s;
 }
+
 .sidebar-logo {
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 60px;
   border-bottom: 1px solid #1e293b;
 }
+
 .sidebar-logo h2 {
   font-size: 16px;
-  font-weight: 600;
+  margin: 0;
 }
+
 .layout-menu {
   border-right: none;
+  height: calc(100vh - 60px);
 }
+
 .layout-main {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 .layout-header {
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background-color: #fff;
+  background: #fff;
   border-bottom: 1px solid #e5e7eb;
-  height: 60px;
 }
+
 .collapse-btn {
   background: transparent;
+  border: none;
   color: #666;
 }
+
 .user-info {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: #333;
 }
+
 .layout-content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background-color: #f9fafb;
+  background: #f9fafb;
+}
+
+/* 折叠时隐藏文字 */
+:deep(.el-menu-item span),
+:deep(.el-sub-menu__title span) {
+  transition: opacity 0.2s;
+}
+
+:deep(.el-menu--collapse .el-menu-item span),
+:deep(.el-menu--collapse .el-sub-menu__title span) {
+  opacity: 0;
 }
 </style>
