@@ -3,11 +3,11 @@
     <!-- 侧边栏 -->
     <el-aside :width="sidebarWidth" class="layout-sidebar">
       <div class="sidebar-logo">
-        <h2>校园智能活动推荐系统</h2>
+        <h2 v-show="!isCollapse">校园智能活动推荐系统</h2>
       </div>
 
       <el-menu
-          default-active="/admin/system/role/list"
+          :default-active="currentRoute"
           class="layout-menu"
           background-color="#0f172a"
           text-color="#fff"
@@ -23,7 +23,6 @@
             <span>系统管理</span>
           </template>
           <el-menu-item index="/admin/system/role/list">角色管理</el-menu-item>
-          <el-menu-item index="/admin/system/moduleConfig/first">一级模块配置</el-menu-item>
           <el-menu-item index="/admin/system/config/base">基础信息配置</el-menu-item>
           <el-menu-item index="/admin/system/log/operation">操作日志</el-menu-item>
         </el-sub-menu>
@@ -60,35 +59,64 @@
           <el-menu-item index="/admin/recommend/algorithm/contentBased">基于内容推荐配置</el-menu-item>
           <el-menu-item index="/admin/recommend/rule/interest">兴趣规则配置</el-menu-item>
         </el-sub-menu>
+
+        <!-- 数据统计分析 -->
+        <el-sub-menu index="statistics">
+          <template #title>
+            <el-icon><PieChart /></el-icon>
+            <span>数据统计分析</span>
+          </template>
+          <el-menu-item index="/admin/statistics/activity">活动统计</el-menu-item>
+          <el-menu-item index="/admin/statistics/user">用户统计</el-menu-item>
+          <el-menu-item index="/admin/statistics/system">系统性能统计</el-menu-item>
+        </el-sub-menu>
+
+        <!-- 消息与通知管理 -->
+        <el-sub-menu index="message">
+          <template #title>
+            <el-icon><Message /></el-icon>
+            <span>消息与通知管理</span>
+          </template>
+          <el-menu-item index="/admin/message/push">消息推送</el-menu-item>
+          <el-menu-item index="/admin/message/template">模板管理</el-menu-item>
+        </el-sub-menu>
+
+        <!-- 院系管理 -->
+        <el-sub-menu index="dept">
+          <template #title>
+            <el-icon><OfficeBuilding /></el-icon>
+            <span>院系管理</span>
+          </template>
+          <el-menu-item index="/admin/dept/info/manage">院系信息管理</el-menu-item>
+          <el-menu-item index="/admin/dept/data/manage">院系数据管理</el-menu-item>
+        </el-sub-menu>
+
+        <!-- 小程序配置管理 -->
+        <el-menu-item index="/admin/miniConfig">
+          <template #title>
+            <el-icon><Phone /></el-icon>
+            <span>小程序配置管理</span>
+          </template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
     <!-- 主内容区 -->
     <div class="layout-main">
-      <!-- 顶部栏 -->
+      <!-- 顶部栏（已移除标题显示） -->
       <el-header class="layout-header">
         <div class="header-left">
           <el-button
-              icon="Menu"
               class="collapse-btn"
               @click="toggleCollapse"
               plain
-          />
+          >
+            <el-icon><MenuIcon /></el-icon>
+          </el-button>
+          <!-- 已删除：页面标题显示元素 -->
         </div>
         <div class="header-right">
-          <el-dropdown @command="handleDropdownCommand">
-            <span class="user-info">
-              <el-icon><UserFilled /></el-icon>
-              {{ adminName }}
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-                <el-dropdown-item command="changePwd">修改密码</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <TopHeader :adminName="adminName" />
         </div>
       </el-header>
 
@@ -101,62 +129,72 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+// 导入组件和依赖
+import TopHeader from '@/views/admin/layout/TopHeader.vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
-// 图标
+// 导入所有需要的图标
 import {
   Setting,
   User,
-  UserFilled,
-  Menu,
   TrendCharts,
-  MagicStick
+  MagicStick,
+  PieChart,
+  Message,
+  OfficeBuilding,
+  Phone,
+  Menu as MenuIcon
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
+// 侧边栏折叠状态
 const isCollapse = ref(false)
+// 侧边栏宽度（折叠/展开）
 const sidebarWidth = computed(() => (isCollapse.value ? '64px' : '220px'))
-const adminName = ref('系统管理员')
+// 当前激活的路由
 const currentRoute = computed(() => router.currentRoute.value.path)
+// 管理员名称
+const adminName = ref('系统管理员')
 
+// 切换侧边栏折叠状态
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
 }
 
+// 初始化管理员信息
 const initAdminInfo = () => {
   try {
     const adminInfoStr = localStorage.getItem('adminInfo')
     if (!adminInfoStr) return
     const adminInfo = JSON.parse(adminInfoStr)
-    if (adminInfo?.username) adminName.value = adminInfo.username
+    adminName.value = adminInfo.name || adminInfo.username || '系统管理员'
   } catch (e) {
     console.warn('解析管理员信息失败', e)
+    ElMessage.warning('管理员信息加载失败')
   }
 }
 
-const handleDropdownCommand = (command) => {
-  switch (command) {
-    case 'profile':
-      router.push('/admin/profile')
-      break
-    case 'changePwd':
-      router.push('/admin/changePwd')
-      break
-    case 'logout':
-      localStorage.clear()
-      ElMessage.success('退出登录成功')
-      router.push('/admin/login')
-      break
-  }
-}
+// 监听路由变化，同步菜单激活状态
+watch(
+    () => router.currentRoute.value.path,
+    (newPath) => {
+      // 处理嵌套路由的激活状态
+      const menuIndex = newPath.split('/').slice(0, 4).join('/') || newPath
+    },
+    { immediate: true }
+)
 
-onMounted(() => initAdminInfo())
+// 页面挂载时初始化
+onMounted(() => {
+  initAdminInfo()
+})
 </script>
 
 <style scoped>
+/* 整体布局 */
 .layout-container {
   display: flex;
   width: 100vw;
@@ -164,10 +202,12 @@ onMounted(() => initAdminInfo())
   overflow: hidden;
 }
 
+/* 侧边栏样式 */
 .layout-sidebar {
   background-color: #0f172a;
   color: #fff;
-  transition: width 0.2s;
+  transition: width 0.2s ease;
+  overflow: hidden;
 }
 
 .sidebar-logo {
@@ -176,18 +216,24 @@ onMounted(() => initAdminInfo())
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid #1e293b;
+  padding: 0 10px;
 }
 
 .sidebar-logo h2 {
   font-size: 16px;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .layout-menu {
   border-right: none;
   height: calc(100vh - 60px);
+  padding-top: 10px;
 }
 
+/* 主内容区样式 */
 .layout-main {
   flex: 1;
   display: flex;
@@ -209,15 +255,27 @@ onMounted(() => initAdminInfo())
   background: transparent;
   border: none;
   color: #666;
-}
-
-.user-info {
+  font-size: 18px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
+  justify-content: center;
 }
 
+.collapse-btn:hover {
+  color: #1989fa;
+  background-color: #f5f7fa;
+}
+
+/* TopHeader容器 */
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* 内容区域 */
 .layout-content {
   flex: 1;
   padding: 20px;
@@ -226,13 +284,42 @@ onMounted(() => initAdminInfo())
 }
 
 /* 折叠时隐藏文字 */
-:deep(.el-menu-item span),
-:deep(.el-sub-menu__title span) {
-  transition: opacity 0.2s;
+:deep(.el-menu--collapse .el-menu-item__label),
+:deep(.el-menu--collapse .el-sub-menu__title span) {
+  display: none;
 }
 
-:deep(.el-menu--collapse .el-menu-item span),
-:deep(.el-menu--collapse .el-sub-menu__title span) {
-  opacity: 0;
+/* 菜单图标居中 */
+:deep(.el-menu--collapse .el-menu-item .el-icon),
+:deep(.el-menu--collapse .el-sub-menu__title .el-icon) {
+  margin-right: 0 !important;
+  font-size: 18px;
+}
+
+/* 菜单激活样式优化 */
+:deep(.el-menu-item.is-active) {
+  background-color: #1e293b !important;
+  color: #1989fa !important;
+}
+
+/* 子菜单缩进自适应 */
+:deep(.el-sub-menu .el-menu-item) {
+  padding-left: calc(20px + 20px) !important;
+}
+
+:deep(.el-menu--collapse .el-sub-menu .el-menu-item) {
+  padding-left: 20px !important;
+}
+
+/* 菜单hover样式 */
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
+/* 子菜单展开指示器颜色 */
+:deep(.el-sub-menu__icon-arrow) {
+  color: #94a3b8;
 }
 </style>
