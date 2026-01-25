@@ -1,280 +1,201 @@
 ﻿<template>
-  <div class="base-config">
-    <el-card shadow="hover" class="config-card">
-      <template #header>
-        <div class="card-header">
-          <span>系统基础信息配置</span>
-          <el-button type="primary" @click="handleSave" icon="Save">保存配置</el-button>
-        </div>
-      </template>
+  <div class="base-config-container">
+    <!-- 1. 页面标题栏（统一风格） -->
+    <div class="page-header">
+      <h3>基础信息配置</h3>
+      <el-button type="primary" class="save-btn" @click="submitConfig">保存配置</el-button>
+    </div>
 
+    <!-- 2. 配置表单区域（移除客服相关项） -->
+    <div class="config-form-container">
       <el-form
           :model="configForm"
           :rules="configRules"
           ref="configFormRef"
-          label-width="120px"
+          label-width="150px"
           class="config-form"
       >
         <!-- 系统基础信息 -->
         <el-form-item label="系统名称" prop="systemName">
           <el-input
               v-model="configForm.systemName"
-              placeholder="请输入系统名称"
+              placeholder="请输入系统名称（如：校园智能活动推荐系统）"
               maxlength="50"
               show-word-limit
-          ></el-input>
-        </el-form-item>
-
-        <el-form-item label="系统简称" prop="systemShortName">
-          <el-input
-              v-model="configForm.systemShortName"
-              placeholder="请输入系统简称"
-              maxlength="20"
-              show-word-limit
-          ></el-input>
+          />
         </el-form-item>
 
         <el-form-item label="系统版本" prop="systemVersion">
           <el-input
               v-model="configForm.systemVersion"
-              placeholder="请输入系统版本号"
-              maxlength="10"
-              show-word-limit
-          ></el-input>
-        </el-form-item>
-
-        <el-form-item label="客服电话" prop="servicePhone">
-          <el-input
-              v-model="configForm.servicePhone"
-              placeholder="请输入客服联系电话"
+              placeholder="请输入系统版本（如：v1.0.0）"
               maxlength="20"
               show-word-limit
-          ></el-input>
+          />
         </el-form-item>
 
-        <el-form-item label="客服邮箱" prop="serviceEmail">
+        <el-form-item label="系统域名" prop="systemDomain">
           <el-input
-              v-model="configForm.serviceEmail"
-              placeholder="请输入客服邮箱地址"
-              maxlength="50"
-              show-word-limit
-          ></el-input>
-        </el-form-item>
-
-        <!-- 网站配置 -->
-        <el-divider content-position="left">网站配置</el-divider>
-
-        <el-form-item label="网站域名" prop="websiteDomain">
-          <el-input
-              v-model="configForm.websiteDomain"
-              placeholder="请输入网站域名（如：https://campus.com）"
+              v-model="configForm.systemDomain"
+              placeholder="请输入系统访问域名（如：https://activity.example.com）"
               maxlength="100"
               show-word-limit
-          ></el-input>
+          />
         </el-form-item>
 
-        <el-form-item label="网站备案号" prop="recordNumber">
-          <el-input
-              v-model="configForm.recordNumber"
-              placeholder="请输入网站备案号"
-              maxlength="50"
-              show-word-limit
-          ></el-input>
-        </el-form-item>
-
-        <el-form-item label="版权信息" prop="copyrightInfo">
-          <el-input
-              v-model="configForm.copyrightInfo"
-              placeholder="请输入版权信息"
-              maxlength="100"
-              show-word-limit
-          ></el-input>
-        </el-form-item>
+        <!-- 移除客服电话/邮箱配置项 -->
 
         <!-- 其他配置 -->
-        <el-divider content-position="left">其他配置</el-divider>
-
-        <el-form-item label="是否开启推荐" prop="enableRecommend">
-          <el-switch
-              v-model="configForm.enableRecommend"
-              active-text="开启"
-              inactive-text="关闭"
-              active-value="1"
-              inactive-value="0"
-          ></el-switch>
-        </el-form-item>
-
-        <el-form-item label="推荐算法类型" prop="recommendType">
-          <el-select
-              v-model="configForm.recommendType"
-              placeholder="请选择推荐算法类型"
-              disabled="!configForm.enableRecommend"
-          >
-            <el-option label="基于内容推荐" value="contentBased"></el-option>
-            <el-option label="协同过滤推荐" value="collaborativeFiltering"></el-option>
-            <el-option label="混合推荐算法" value="hybrid"></el-option>
+        <el-form-item label="数据备份周期" prop="backupCycle">
+          <el-select v-model="configForm.backupCycle" placeholder="请选择数据备份周期">
+            <el-option label="每日备份" value="day" />
+            <el-option label="每周备份" value="week" />
+            <el-option label="每月备份" value="month" />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="数据缓存时间(分钟)" prop="cacheTime">
-          <el-input-number
-              v-model="configForm.cacheTime"
-              :min="1"
-              :max="1440"
-              :step="1"
-              placeholder="请输入缓存时间"
-          ></el-input-number>
+        <el-form-item label="是否开启日志" prop="enableLog">
+          <el-radio-group v-model="configForm.enableLog">
+            <el-radio label="1">开启</el-radio>
+            <el-radio label="0">关闭</el-radio>
+          </el-radio-group>
         </el-form-item>
 
-        <el-form-item label="备注信息">
+        <el-form-item label="系统描述" prop="systemDesc">
           <el-input
-              v-model="configForm.remark"
+              v-model="configForm.systemDesc"
+              placeholder="请输入系统描述信息"
               type="textarea"
               :rows="4"
-              placeholder="请输入备注信息（选填）"
-              maxlength="500"
+              maxlength="200"
               show-word-limit
-          ></el-input>
+          />
         </el-form-item>
       </el-form>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script setup>
+/********************************************************************
+ * 文件名：BaseConfig.vue
+ * 存放路径：src/views/admin/system/config/BaseConfig.vue
+ * 功能描述：系统基础信息配置页面，管理系统名称、版本、域名等基础参数
+ * 依赖说明：
+ *  1. element-plus：UI组件库（表单、按钮、输入框等）
+ *  2. vue：核心框架（响应式、表单校验等）
+ ********************************************************************/
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Save } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
-// 表单引用
-const configFormRef = ref(null)
+// 响应式数据
+const loading = ref(false) // 提交加载状态
+const configFormRef = ref(null) // 表单引用
 
-// 加载状态
-const loading = ref(false)
-
-// 配置表单数据
+// 配置表单数据（移除客服相关字段）
 const configForm = reactive({
-  // 系统基础信息
-  systemName: '校园智能活动推荐系统',
-  systemShortName: '校园活动系统',
-  systemVersion: 'V1.0.0',
-  servicePhone: '13800138000',
-  serviceEmail: 'service@campus.com',
-
-  // 网站配置
-  websiteDomain: 'https://campus.com',
-  recordNumber: '粤ICP备20260001号',
-  copyrightInfo: '©2026 校园智能活动推荐系统 版权所有',
-
-  // 其他配置
-  enableRecommend: '1',
-  recommendType: 'contentBased',
-  cacheTime: 30,
-  remark: ''
+  systemName: '校园智能活动推荐系统', // 默认系统名称
+  systemVersion: 'v1.0.0', // 默认版本
+  systemDomain: '', // 系统域名
+  backupCycle: 'week', // 默认每周备份
+  enableLog: '1', // 默认开启日志
+  systemDesc: '基于智能推荐算法的校园活动管理系统，支持活动发布、审核、推荐等功能' // 默认描述
 })
 
-// 表单校验规则
+// 表单校验规则（移除客服相关校验）
 const configRules = reactive({
   systemName: [
     { required: true, message: '请输入系统名称', trigger: 'blur' },
     { min: 2, max: 50, message: '系统名称长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  systemShortName: [
-    { required: true, message: '请输入系统简称', trigger: 'blur' },
-    { min: 2, max: 20, message: '系统简称长度在 2 到 20 个字符', trigger: 'blur' }
-  ],
   systemVersion: [
-    { required: true, message: '请输入系统版本号', trigger: 'blur' }
+    { required: true, message: '请输入系统版本', trigger: 'blur' },
+    { pattern: /^v\d+\.\d+\.\d+$/, message: '版本格式为 v+数字.数字.数字（如：v1.0.0）', trigger: 'blur' }
   ],
-  websiteDomain: [
-    { required: true, message: '请输入网站域名', trigger: 'blur' },
-    { pattern: /^https?:\/\/.+$/, message: '请输入合法的网址（以http/https开头）', trigger: 'blur' }
+  systemDomain: [
+    { pattern: /^https?:\/\/.+$/, message: '请输入合法的域名（以http/https开头）', trigger: 'blur' }
   ],
-  recordNumber: [
-    { required: true, message: '请输入网站备案号', trigger: 'blur' }
+  backupCycle: [
+    { required: true, message: '请选择数据备份周期', trigger: 'change' }
   ],
-  copyrightInfo: [
-    { required: true, message: '请输入版权信息', trigger: 'blur' }
-  ],
-  cacheTime: [
-    { required: true, message: '请输入数据缓存时间', trigger: 'blur' }
-  ],
-  recommendType: [
-    { required: true, message: '请选择推荐算法类型', trigger: 'change' }
+  enableLog: [
+    { required: true, message: '请选择是否开启日志', trigger: 'change' }
   ]
 })
 
-// 获取配置信息
+// 获取已有配置（模拟接口请求）
 const getConfig = () => {
   loading.value = true
-  // 模拟接口请求获取配置
+  // 实际项目替换为真实接口请求
   setTimeout(() => {
-    // 这里可替换为真实接口请求
+    // 模拟从后端获取配置数据
     loading.value = false
   }, 500)
 }
 
-// 保存配置
-const handleSave = () => {
+// 提交配置保存
+const submitConfig = () => {
   configFormRef.value.validate((valid) => {
     if (!valid) return
 
-    ElMessageBox.confirm(
-        '确定要保存系统基础配置吗？保存后配置立即生效',
-        '提示',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-    ).then(() => {
-      loading.value = true
-      // 模拟接口保存配置
-      setTimeout(() => {
-        ElMessage.success('配置保存成功！')
-        loading.value = false
-      }, 800)
-    }).catch(() => {
-      ElMessage.info('已取消保存')
-    })
+    loading.value = true
+    // 模拟接口提交保存
+    setTimeout(() => {
+      ElMessage.success('基础信息配置保存成功！')
+      loading.value = false
+    }, 800)
   })
 }
 
-// 初始化
+// 初始化加载配置
 onMounted(() => {
   getConfig()
 })
 </script>
 
 <style scoped>
-.base-config {
+/* 基础容器样式 */
+.base-config-container {
+  background-color: #fff;
   padding: 20px;
-  background-color: #f9fafb;
-  min-height: calc(100vh - 100px);
+  min-height: calc(100vh - 60px);
 }
 
-.config-card {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.card-header {
+/* 页面标题栏（和角色管理/一级模块配置统一风格） */
+.page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.page-header h3 {
+  font-size: 18px;
   font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.save-btn {
+  background-color: #2f54eb;
+  border-color: #2f54eb;
+}
+
+/* 配置表单容器 */
+.config-form-container {
+  background-color: #f5f7fa;
+  padding: 24px;
+  border-radius: 4px;
 }
 
 .config-form {
-  margin-top: 20px;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
 }
 
 .el-form-item {
-  margin-bottom: 25px;
-}
-
-.el-divider {
-  margin: 30px 0;
+  margin-bottom: 24px;
 }
 </style>

@@ -47,16 +47,16 @@ const routes = [
                 meta: { title: '权限变更日志' }
             },
             {
-                path: 'system/moduleConfig/first',
-                name: 'FirstModuleList',
-                component: () => import('@/views/admin/system/moduleConfig/FirstModuleList.vue'),
-                meta: { title: '一级模块配置' }
-            },
-            {
                 path: 'system/config/base',
                 name: 'BaseConfig',
                 component: () => import('@/views/admin/system/config/BaseConfig.vue'),
                 meta: { title: '基础信息配置' }
+            },
+            {
+                path: 'system/log/operation', // 对应访问路径
+                name: 'OperationLog',
+                component: () => import('@/views/admin/system/log/OperationLog.vue'), // 对应文件路径
+                meta: { title: '操作日志' }
             },
             // 系统管理其他子路由（log/OperationLog 等）按相同格式添加
 

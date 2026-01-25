@@ -1,0 +1,36 @@
+/* 统一的页面标题栏样式 */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.page-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.add-btn {
+    background-color: #2f54eb;
+    border-color: #2f54eb;
+}
+
+.import-btn {
+    background-color: #fa8c16;
+    border-color: #fa8c16;
+}
+
+.export-btn {
+    background-color: #52c41a;
+    border-color: #52c41a;
+}

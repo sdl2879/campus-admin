@@ -6,7 +6,7 @@
       <el-button type="primary" class="add-btn" @click="openRoleForm">新增角色</el-button>
     </div>
 
-    <!-- 搜索栏 -->
+    <!-- 搜索栏（移除拖拽上传区域） -->
     <div class="search-bar">
       <el-form :model="searchForm" inline>
         <el-form-item label="角色名称">
@@ -32,19 +32,7 @@
           <el-button type="primary" class="query-btn" @click="fetchRoleList">查询</el-button>
           <el-button class="reset-btn" @click="resetSearch">重置</el-button>
         </el-form-item>
-        <!-- 拖拽上传按钮 -->
-        <div class="upload-btn">
-          <el-upload
-              class="upload-dragger"
-              drag
-              action="#"
-              :auto-upload="false"
-              :on-change="handleFileChange"
-          >
-            <i class="el-icon-upload"></i>
-            <div class="el-upload__text">拖拽至此上传</div>
-          </el-upload>
-        </div>
+        <!-- 已删除：拖拽上传按钮区域 -->
       </el-form>
     </div>
 
@@ -181,7 +169,7 @@ const getRoleList = (params) => {
 const addRole = (data) => Promise.resolve({ code: 200 });
 const editRole = (data) => Promise.resolve({ code: 200 });
 const updateRoleStatus = (data) => Promise.resolve({ code: 200 });
-const importRole = (formData) => Promise.resolve({ code: 200 });
+// 已删除：批量导入相关接口（无需保留）
 
 // 3. 定义所有模板中使用的变量（完整初始化）
 const router = useRouter();
@@ -376,23 +364,7 @@ const goToRoleLog = (roleId) => {
   router.push(`/admin/system/role/log/${roleId}`);
 };
 
-// 批量导入角色
-const handleFileChange = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file.raw);
-    const res = await importRole(formData);
-    if (res.code === 200) {
-      ElMessage.success('角色批量导入成功');
-      fetchRoleList();
-    } else {
-      ElMessage.error(res.msg || '角色批量导入失败');
-    }
-  } catch (error) {
-    ElMessage.error('角色批量导入异常');
-    console.error(error);
-  }
-};
+// 已删除：批量导入相关方法（无需保留）
 
 // 5. 页面挂载时初始化数据
 onMounted(() => {
@@ -420,7 +392,7 @@ onMounted(() => {
   border-color: #2f54eb;
 }
 
-/* 搜索栏样式 */
+/* 搜索栏样式（移除拖拽区域后优化布局） */
 .search-bar {
   background-color: #f5f7fa;
   padding: 16px;
@@ -444,10 +416,6 @@ onMounted(() => {
   background-color: #fff;
   color: #666;
   border-color: #dcdfe6;
-}
-
-.upload-btn {
-  margin-left: auto;
 }
 
 /* 表格容器样式 */
