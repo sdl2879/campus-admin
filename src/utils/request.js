@@ -1,61 +1,91 @@
-// src/utils/request.js
-import axios from 'axios'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import router from '@/router'
+// src/utils/service.js （或 request.js）
+import axios from 'axios';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import router from '@/router';
 
-// 创建 axios 实例（开发环境-适配前端8080端口+代理）
+// 创建 axios 实例
 const service = axios.create({
-    baseURL: '/api', // 核心：相对路径，由Vite代理转发到后端
-    timeout: 5000,
-    headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-    }
-})
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+    timeout: 10000,
+    withCredentials: true
+});
 
-// 请求拦截器：添加管理端Token（adminToken）+ Bearer前缀
+// 请求拦截器：添加 Token
 service.interceptors.request.use(
-    config => {
-        const token = localStorage.getItem('adminToken')
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token && !['undefined', 'null', ''].includes(token)) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
-        return config
+        return config;
     },
-    error => Promise.reject(error)
-)
+    (error) => Promise.reject(error)
+);
 
-// 响应拦截器：统一处理管理端接口结果
+// 响应拦截器：统一处理
 service.interceptors.response.use(
-    response => {
-        const res = response.data
-        // 管理端接口统一返回格式：{code:200, msg:"成功", data:{}}
-        if (res.code !== 200) {
-            ElMessage.error(res.msg || '操作失败')
-            // 401：登录过期/未登录，跳管理端登录页
-            if (res.code === 401) {
-                ElMessageBox.confirm(
-                    '登录已过期，请重新登录管理端',
-                    '权限验证',
-                    {
-                        confirmButtonText: '重新登录',
-                        cancelButtonText: '取消',
-                        type: 'warning'
-                    }
-                ).then(() => {
-                    localStorage.removeItem('adminToken')
-                    router.push('/admin/login')
-                })
-            }
-            return Promise.reject(res)
+    /**
+     * ✅ 关键修复：确保返回一个对象，即使后端返回空/HTML/错误页
+     */
+    (response) => {
+        // 如果后端返回的是非 JSON（如 404 HTML），response.data 可能是字符串
+        if (typeof response.data !== 'object' || response.data === null) {
+            console.warn('后端返回非 JSON 数据:', response.data);
+            return { code: -1, msg: '服务器返回格式错误，请检查接口' };
         }
-        return res // 成功返回完整结果：{code:200, msg, data}
+        return response.data || {}; // 兜底 {}
     },
-    error => {
-        // 网络错误/服务器错误友好提示
-        const errMsg = error.message || '服务器请求失败'
-        ElMessage.error(`管理端接口错误：${errMsg}`)
-        return Promise.reject(error)
-    }
-)
+    async (error) => {
+        // 处理 401 未授权
+        if (error.response?.status === 401) {
+            if (window.isHandling401) return Promise.reject(error);
+            window.isHandling401 = true;
 
-export default service
+            try {
+                await ElMessageBox.confirm('登录状态已失效，请重新登录', '提示', {
+                    confirmButtonText: '重新登录',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                });
+                // 清除登录信息
+                localStorage.removeItem('token');
+                localStorage.removeItem('adminInfo');
+                localStorage.removeItem('adminRole');
+                router.push('/admin/login').catch(() => {});
+            } catch {
+                ElMessage.info('已取消重新登录');
+            } finally {
+                window.isHandling401 = false;
+            }
+            return Promise.reject(error);
+        }
+
+        // 处理其他 HTTP 错误（4xx/5xx）
+        let msg = '请求失败';
+        if (error.response) {
+            // 后端返回了 JSON 错误
+            if (typeof error.response.data === 'object') {
+                msg = error.response.data.msg || `错误 ${error.response.status}`;
+            } else {
+                // 后端返回 HTML/文本（如 Spring Boot Whitelabel Error）
+                msg = `服务器错误 (${error.response.status})`;
+            }
+        } else if (error.request) {
+            // 网络错误（无响应）
+            msg = '无法连接到服务器，请检查后端是否启动';
+        } else {
+            // 其他错误
+            msg = error.message || '未知错误';
+        }
+
+        ElMessage.error(msg);
+
+        // ✅ 关键：返回一个标准对象，避免前端报错
+        return Promise.resolve({
+            code: error.response?.status || -1,
+            msg
+        });
+    }
+);
+
+export default service;
